@@ -48,7 +48,7 @@ tasks:
     backend:watch:
         dir: backend
         cmds:
-            - ~/.cargo/bin/watchexec -r -e go -w . -w .env -- "CGO_ENABLED=0 go run ./cmd/server/main.go"
+            - ~/.cargo/bin/watchexec -r -e go -w . -- env CGO_ENABLED=0 go run ./cmd/server/main.go
 
     backend:build:
         dir: backend
