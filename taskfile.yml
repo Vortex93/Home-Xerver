@@ -1,0 +1,126 @@
+version: "3"
+
+vars:
+    IMAGE_REGISTRY: registry.gitlab.com
+    IMAGE_OWNER: xerver
+    IMAGE_PROJECT: workspace
+    IMAGE_NAME: apps/blink-hoh
+    IMAGE_TAG: latest
+    IMAGE_REF: "{{.IMAGE_REGISTRY}}/{{.IMAGE_OWNER}}/{{.IMAGE_PROJECT}}/{{.IMAGE_NAME}}:{{.IMAGE_TAG}}"
+    FRONTEND_API_BASE_URL: ""
+    FRONTEND_USE_LOCAL_API: "false"
+
+tasks:
+    default:
+        cmds:
+            - task --list-all
+
+    docs:mermaid:render:
+        desc: Render all Mermaid diagrams in docs/mermaid
+        dir: .
+        cmds:
+            - |
+              set -euo pipefail
+              for f in docs/mermaid/*.mmd; do
+                base="${f%.mmd}"
+                echo "Rendering $f"
+                ./frontend/node_modules/.bin/mmdc -i "$f" -o "$base.svg"
+              done
+
+    docs:mermaid:render:frontend:
+        desc: Render Mermaid diagrams (input dir frontend, output dir docs/mermaid)
+        dir: frontend
+        cmds:
+            - |
+              set -euo pipefail
+              for f in docs/mermaid/*.mmd; do
+                base="$PWD/../docs/mermaid/${f##*/}"
+                base="${base%.mmd}"
+                echo "Rendering $f -> $base.svg"
+                ./node_modules/.bin/mmdc -i "$f" -o "$base.svg"
+              done
+
+    backend:run:
+        dir: backend
+        cmds:
+            - CGO_ENABLED=0 go run cmd/server/main.go
+
+    backend:watch:
+        dir: backend
+        cmds:
+            - ~/.cargo/bin/watchexec -r -e go -w . -w .env -- "CGO_ENABLED=0 go run ./cmd/server/main.go"
+
+    backend:build:
+        dir: backend
+        cmds:
+            - go build -o bin/server ./cmd/server
+
+    backend:test:
+        dir: backend
+        cmds:
+            - CGO_ENABLED=0 go test ./...
+
+    backend:fmt:
+        dir: backend
+        cmds:
+            - gofmt -w ./cmd ./internal
+
+    backend:vet:
+        dir: backend
+        cmds:
+            - go vet ./...
+
+    backend:deps:
+        dir: backend
+        cmds:
+            - go mod tidy
+
+    frontend:run:
+        dir: frontend
+        cmds:
+            - bun run dev -- --host 0.0.0.0 --port 10008
+
+    frontend:format:
+        dir: frontend
+        cmds:
+            - bun prettier --write .
+            -
+    export:frontend:
+        cmds:
+            - 'promptcat include=svelte,ts "./frontend/src/**" > export.frontend'
+
+    export:backend:
+        cmds:
+            - 'promptcat include=go,mod "./backend/**" > export.backend'
+
+    export:
+        desc: Generate export file with promptcat
+        cmds:
+            - 'promptcat include=svelte,ts,go,mod "./frontend/src/**" "./backend/**" > export'
+
+    compose:build:
+        cmds:
+            - docker compose build --parallel
+
+    compose:up:
+        cmds:
+            - docker compose up -d --remove-orphans
+
+    compose:down:
+        cmds:
+            - docker compose down
+
+    compose:logs:
+        cmds:
+            - docker compose logs -f --tail=100
+
+    compose:restart:
+        cmds:
+            - docker compose down
+            - docker compose up -d --remove-orphans
+
+    deploy:
+        desc: Build and push the production image to the GitLab container registry
+        cmds:
+            - docker build --build-arg VITE_API_BASE_URL={{.FRONTEND_API_BASE_URL}} --build-arg VITE_USE_LOCAL_API={{.FRONTEND_USE_LOCAL_API}} -t {{.IMAGE_REF}} .
+            - docker push {{.IMAGE_REF}}
