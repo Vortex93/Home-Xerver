@@ -12,8 +12,10 @@ import (
 var (
     API_HOST string
     API_PORT string
-)
 
+    DEVICE_91_USER string
+    DEVICE_91_PASS string
+)
 
 // ========================================
 // Bootstrap
@@ -26,6 +28,9 @@ func init() {
 
     API_HOST = os.Getenv("API_HOST")
     API_PORT = os.Getenv("API_PORT")
+
+    DEVICE_91_USER = os.Getenv("DEVICE_91_USER")
+    DEVICE_91_PASS = os.Getenv("DEVICE_91_PASS")
 }
 
 // ========================================
@@ -46,6 +51,20 @@ func GetAPIPort() string {
         return "8080" // Default to 8080 if not set
     }
     return API_PORT
+}
+
+func GetDevice91User() string {
+    if DEVICE_91_USER == "" {
+        return "admin"
+    }
+    return DEVICE_91_USER
+}
+
+func GetDevice91Pass() string {
+    if DEVICE_91_PASS == "" {
+        return "admin"
+    }
+    return DEVICE_91_PASS
 }
 
 // ========================================

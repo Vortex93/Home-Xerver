@@ -104,32 +104,39 @@ func (c *Client) Connect() error {
 
 // Execute executes a command on the remote SSH server and returns the output or error.
 func (c *Client) Execute(params CommandParams) (*CommandResponse, error) {
-	var err error
+    var err error
 
-	c.Session, err = c.Client.NewSession()
-	if err != nil {
-		return nil, &Error{
-			Code:    ErrSessionFailed,
-			Message: "Failed to create SSH session",
-			Cause:   err,
-		}
-	}
-	defer c.Session.Close()
+    if c.Client == nil {
+        return nil, &Error{
+            Code:    ErrConnectionFailed,
+            Message: "SSH client is not connected",
+        }
+    }
 
-	output, err := c.Session.CombinedOutput(params.Command)
-	if err != nil {
-		return &CommandResponse{
-				Error: string(output) + ": " + err.Error(),
-			}, &Error{
-				Code:    ErrCommandFailed,
-				Message: "Failed to execute command on SSH server",
-				Cause:   err,
-			}
-	}
+    session, err := c.Client.NewSession()
+    if err != nil {
+        return nil, &Error{
+            Code:    ErrSessionFailed,
+            Message: "Failed to create SSH session",
+            Cause:   err,
+        }
+    }
+    defer session.Close()
 
-	return &CommandResponse{
-		Output: string(output),
-	}, nil
+    output, err := session.CombinedOutput(params.Command)
+    if err != nil {
+        return &CommandResponse{
+            Error: string(output),
+        }, &Error{
+            Code:    ErrCommandFailed,
+            Message: "Failed to execute command on SSH server",
+            Cause:   err,
+        }
+    }
+
+    return &CommandResponse{
+        Output: string(output),
+    }, nil
 }
 
 func (c *Client) Close() error {
