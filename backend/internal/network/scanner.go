@@ -1,11 +1,12 @@
 package network
 
 import (
-    "fmt"
-    "net"
-    "sort"
-    "sync"
-    "time"
+	"fmt"
+	"internal/runtime/gc/scan"
+	"net"
+	"sort"
+	"sync"
+	"time"
 )
 
 // ========================================
@@ -24,7 +25,17 @@ var (
 )
 
 // ========================================
-// Methods
+// Runtime
+// ========================================
+func Start() {
+    for {
+        Scan()
+        time.Sleep(5 * time.Second)
+    }
+}
+
+// ========================================
+// Functions
 // ========================================
 
 // Scan finds devices on local private IPv4 /24 networks.
