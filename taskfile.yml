@@ -1,13 +1,12 @@
 version: "3"
 
 vars:
-    IMAGE_REGISTRY: registry.gitlab.com
-    IMAGE_OWNER: xerver
-    IMAGE_PROJECT: workspace
-    IMAGE_NAME: apps/blink-hoh
-    IMAGE_TAG: latest
-    IMAGE_REF: "{{.IMAGE_REGISTRY}}/{{.IMAGE_OWNER}}/{{.IMAGE_PROJECT}}/{{.IMAGE_NAME}}:{{.IMAGE_TAG}}"
-    FRONTEND_API_BASE_URL: ""
+    IMAGE_REGISTRY        : ghcr.io
+    IMAGE_OWNER           : vortex93
+    IMAGE_NAME            : home-xerver
+    IMAGE_TAG             : latest
+    IMAGE_REF             : "{{.IMAGE_REGISTRY}}/{{.IMAGE_OWNER}}/{{.IMAGE_NAME}}:{{.IMAGE_TAG}}"
+    FRONTEND_API_BASE_URL : ""
     FRONTEND_USE_LOCAL_API: "false"
 
 tasks:
@@ -84,7 +83,7 @@ tasks:
         dir: frontend
         cmds:
             - bun prettier --write .
-            -
+
     export:frontend:
         cmds:
             - 'promptcat include=svelte,ts "./frontend/src/**" > export.frontend'
@@ -120,7 +119,7 @@ tasks:
             - docker compose up -d --remove-orphans
 
     deploy:
-        desc: Build and push the production image to the GitLab container registry
+        desc: Build and push the production image to GHCR
         cmds:
             - docker build --build-arg VITE_API_BASE_URL={{.FRONTEND_API_BASE_URL}} --build-arg VITE_USE_LOCAL_API={{.FRONTEND_USE_LOCAL_API}} -t {{.IMAGE_REF}} .
             - docker push {{.IMAGE_REF}}
